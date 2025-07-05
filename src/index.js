@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors'
 import { connectMongoose } from "./db/mongoose.js";
 
 import weatherRouter from "./routes/weather.route.js";
@@ -10,11 +11,12 @@ dotenv.config();
 const app = express()
 const port = 3000
 
+app.use(cors({origin: '*'})) // cors
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/weather", weatherRouter);
 app.use("/earthquakes", earthquakeRouter);
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
 
 
 app.listen(port, () => {
@@ -23,5 +25,6 @@ app.listen(port, () => {
 })
 
 app.get('/', (req, res) => {
-    res.send('{"message": "API is running successfully"}')
+    console.log('Mi primer endpoint')
+    res.status(200).send('API corriendo')
 })
