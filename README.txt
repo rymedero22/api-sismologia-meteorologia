@@ -13,7 +13,7 @@ Comprueba en PowerShell:
 3. VARIABLES DE ENTORNO
 -----------------------
 1 Copia el archivo de ejemplo y edítalo:
-copy .env.example .env
+copy .env.template .env
 
 
 
