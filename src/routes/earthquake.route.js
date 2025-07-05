@@ -5,12 +5,10 @@ import { query, param, body } from "express-validator"
 import { validate } from "../utils/validate.js"
 
 const router = Router();
-const earthquakesPath = '/earthquakes'
-
 
 router.get(`/:source`, validate([
     param('source').isIn(['USGS', 'EMSC', 'DB']).withMessage('Source must be one of USGS, EMSC, or DB'),
-    query('country').optional().isString().notEmpty().withMessage('Country query parameter is optional but must be a non-empty string if provided')
+    query('country').isString().notEmpty().withMessage('Country query parameter is optional but must be a non-empty string if provided')
 ]), (req, res) =>{
     // ?: source must be in ['USGS', 'EMSC', 'DB']
     const source = req.params.source
