@@ -2,10 +2,22 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 
 const weatherschemas = new Schema({
-    city: String, 
-    temperature: Number,
-    humidity: Number,
-    condition: String,
+    city:{
+        type:String,
+        required:true
+    } ,
+    temperature:{
+        type:Number,
+        required:true
+    } ,
+    humidity:{
+        type:Number,
+        required:true
+    } ,
+    condition:{
+        type:String,
+        required:true
+    } 
 });
 
 const Weather = mongoose.model('Weather', weatherschemas);
