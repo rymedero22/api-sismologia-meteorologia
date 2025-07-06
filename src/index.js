@@ -1,6 +1,6 @@
 import express from 'express';
-import cors from 'cors'
 import { connectMongoose } from "./db/mongoose.js";
+import cors from 'cors';
 
 import weatherRouter from "./routes/weather.route.js";
 import earthquakeRouter from "./routes/earthquake.route.js";
@@ -11,9 +11,10 @@ dotenv.config();
 const app = express()
 const port = 3000
 
-app.use(cors({origin: '*'})) // cors
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Middlewares deben ir ANTES de las rutas
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(cors());
 
 app.use("/weather", weatherRouter);
 app.use("/earthquakes", earthquakeRouter);
@@ -25,6 +26,5 @@ app.listen(port, () => {
 })
 
 app.get('/', (req, res) => {
-    console.log('Mi primer endpoint')
-    res.status(200).send('API corriendo')
+    res.send('{"message": "API is running successfully"}')
 })
