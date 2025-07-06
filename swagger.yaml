@@ -1,0 +1,241 @@
+openapi: 3.0.3
+info:
+  title: API Sismología - Endpoints de Sismos
+  description: |
+    Documentación de los endpoints de sismos. Cada endpoint está descrito de forma concisa y práctica, enfocada en su función real.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+paths:
+  /earthquakes/{source}:
+    get:
+      summary: Obtener los 10 sismos más recientes de una fuente
+      description: |
+        Devuelve los 10 sismos globales más recientes desde la fuente indicada (USGS, EMSC o DB), ordenados por fecha descendente.
+      parameters:
+        - in: path
+          name: source
+          required: true
+          schema:
+            type: string
+            enum: [USGS, EMSC, DB]
+          description: Fuente de datos sísmicos (USGS, EMSC o base de datos local)
+      responses:
+        '200':
+          description: Lista de los 10 sismos más recientes
+          content:
+            application/json:
+              examples:
+                ejemploExitoso:
+                  summary: Respuesta exitosa
+                  value:
+                    - magnitude: 6.2
+                      depth: 10
+                      location: "100km NW of Santiago, Chile"
+                      date: "2025-07-05"
+                      country: "CHILE"
+                      source: "USGS"
+                    - magnitude: 5.8
+                      depth: 35
+                      location: "50km S of Lima, Peru"
+                      date: "2025-07-04"
+                      country: "PERU"
+                      source: "USGS"
+                sinRegistros:
+                  summary: Sin registros
+                  value:
+                    message: "No hay registros sísmicos"
+                    country: "ALL"
+        '503':
+          description: Servicio temporalmente no disponible
+  /earthquakes/history/{country}:
+    get:
+      summary: Historial de sismos por país
+      description: |
+        Devuelve el historial de sismos registrados en la base de datos local para el país especificado, ordenados por fecha descendente.
+      parameters:
+        - in: path
+          name: country
+          required: true
+          schema:
+            type: string
+          description: País a consultar
+      responses:
+        '200':
+          description: Historial de sismos para el país
+          content:
+            application/json:
+              examples:
+                ejemploHistorial:
+                  summary: Historial exitoso
+                  value:
+                    - magnitude: 5.5
+                      depth: 20
+                      location: "30km NE of Coquimbo, Chile"
+                      date: "2025-07-01"
+                      country: "CHILE"
+                      source: "DB"
+                    - magnitude: 4.8
+                      depth: 15
+                      location: "10km S of Valparaíso, Chile"
+                      date: "2025-06-28"
+                      country: "CHILE"
+                      source: "DB"
+                sinRegistros:
+                  summary: Sin registros
+                  value:
+                    message: "No hay registros sísmicos"
+                    country: "CHILE"
+  /earthquakes:
+    post:
+      summary: Registrar un sismo
+      description: |
+        Permite registrar un nuevo sismo en la base de datos. Si se proporciona eventId y source (USGS o EMSC), importa el evento desde la fuente externa. Si no, se debe ingresar la información manualmente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/EarthquakeManualInput'
+                - $ref: '#/components/schemas/EarthquakeExternalInput'
+            examples:
+              manual:
+                summary: Registro manual
+                value:
+                  location: "30km NE of Coquimbo, Chile"
+                  magnitude: 5.5
+                  depth: 20
+                  date: "2025-07-01"
+                  country: "CHILE"
+                  source: "DB"
+                  coordinates:
+                    type: "Point"
+                    coordinates: [-71.338, -29.953]
+              externo:
+                summary: Registro por eventId externo
+                value:
+                  eventId: "us7000k1v7"
+                  source: "USGS"
+      responses:
+        '201':
+          description: Sismo guardado exitosamente
+          content:
+            application/json:
+              example:
+                id: "60f7c2b8e1b1c2a5d4e8f123"
+                magnitude: 5.5
+                depth: 20
+                location: "30km NE of Coquimbo, Chile"
+                date: "2025-07-01"
+                country: "CHILE"
+                source: "DB"
+        '400':
+          description: Datos de entrada inválidos
+          content:
+            application/json:
+              example:
+                message: "Datos de entrada inválidos"
+                error: "El campo 'magnitude' es obligatorio"
+        '409':
+          description: Registro duplicado
+          content:
+            application/json:
+              example:
+                message: "Registro duplicado"
+                error: "Ya existe un sismo con ese eventId"
+        '404':
+          description: Evento no encontrado en fuente externa
+          content:
+            application/json:
+              example:
+                message: "Evento no encontrado en fuente externa"
+                error: "No existe un evento con ese eventId en USGS"
+  /earthquakes/{id}:
+    delete:
+      summary: Eliminar un sismo
+      description: |
+        Elimina un sismo de la base de datos local usando su ID de MongoDB.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID de MongoDB del sismo
+      responses:
+        '200':
+          description: Registro eliminado correctamente
+          content:
+            application/json:
+              example:
+                message: "Registro eliminado correctamente"
+                id: "60f7c2b8e1b1c2a5d4e8f123"
+        '404':
+          description: Registro no encontrado
+          content:
+            application/json:
+              example:
+                message: "Registro no encontrado"
+                error: "No existe un sismo con ese ID"
+components:
+  schemas:
+    EarthquakeManualInput:
+      type: object
+      required:
+        - location
+        - magnitude
+        - depth
+        - date
+      properties:
+        location:
+          type: string
+          description: Descripción de la ubicación del sismo.
+        magnitude:
+          type: number
+          description: Magnitud del sismo en la escala Richter.
+        depth:
+          type: number
+          description: Profundidad del sismo en kilómetros.
+        date:
+          type: string
+          format: date
+          description: Fecha del evento en formato YYYY-MM-DD.
+        country:
+          type: string
+          description: País donde ocurrió el sismo.
+        source:
+          type: string
+          description: Fuente del dato (USGS, EMSC, DB).
+        eventId:
+          type: string
+          description: ID del evento en la fuente externa (opcional).
+        coordinates:
+          type: object
+          description: Coordenadas geográficas del epicentro.
+          properties:
+            type:
+              type: string
+              enum: [Point]
+              description: Tipo de geometría (siempre "Point").
+            coordinates:
+              type: array
+              items:
+                type: number
+              minItems: 2
+              maxItems: 2
+              description: Arreglo [longitud, latitud].
+    EarthquakeExternalInput:
+      type: object
+      required:
+        - eventId
+        - source
+      properties:
+        eventId:
+          type: string
+          description: ID del evento en la fuente externa (USGS o EMSC).
+        source:
+          type: string
+          enum: [USGS, EMSC]
+          description: Fuente externa del evento.
