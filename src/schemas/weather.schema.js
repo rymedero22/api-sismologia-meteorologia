@@ -16,7 +16,8 @@ const weatherschemas = new Schema({
     } ,
     condition:{
         type:String,
-        required:true
+        required:true,
+        enum: ['Soleado', 'Nublado', 'Lluvioso', 'Tormenta']
     } 
 });
 
