@@ -1,13 +1,144 @@
 openapi: 3.0.3
 info:
-  title: API Sismología - Endpoints de Sismos
-  description: |
-    Documentación de los endpoints de sismos. Cada endpoint está descrito de forma concisa y práctica, enfocada en su función real.
+  title: API Sismología y Meteorología
+  description: >
+    Documentación de los endpoints de Sismos y Clima. Generada con Swagger (OpenAPI).
   version: 1.0.0
+
 servers:
   - url: http://localhost:3000
     description: Servidor local
 paths:
+ # -----------------------
+  # Módulo Meteorología
+  # -----------------------
+  /weather/{source}:
+    get:
+      summary: Obtener datos meteorológicos
+      description: >
+        Trae datos en tiempo real de la fuente indicada (OpenWeatherMap, WeatherApi) 
+        o el último registro local (DB).
+      parameters:
+        - in: path
+          name: source
+          required: true
+          schema:
+            type: string
+            enum: [OpenWeatherMap, WeatherApi, DB]
+          description: Fuente de datos: API externa o base de datos local
+        - in: query
+          name: city
+          required: true
+          schema:
+            type: string
+          description: Nombre de la ciudad
+      responses:
+        '200':
+          description: Datos meteorológicos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Weather'
+        '404':
+          description: No hay registros climáticos
+          content:
+            application/json:
+              example:
+                message: "No hay registros climáticos"
+        '502':
+          description: Error en la API externa
+          content:
+            application/json:
+              example:
+                message: "OpenWeatherMap API key inválida o inactiva"
+
+  /weather:
+    post:
+      summary: Guardar reporte meteorológico
+      description: >
+        Guarda un reporte manual en la base de datos local.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WeatherInput'
+            example:
+              city: "Lima"
+              temperature: 22.5
+              humidity: 78
+              condition: "Nublado"
+      responses:
+        '201':
+          description: Reporte guardado
+          content:
+            application/json:
+              example:
+                id: "64e2b5f0a6c8d3b2e1234567"
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              example:
+                message: "Validation failed"
+                errors: [ { msg: "Condition must be one of: Soleado, Nublado, Lluvioso, Tormenta", param: "condition" } ]
+
+  /weather/history/{city}:
+    get:
+      summary: Historial meteorológico
+      description: >
+        Devuelve todos los reportes guardados en la BD para la ciudad indicada.
+      parameters:
+        - in: path
+          name: city
+          required: true
+          schema:
+            type: string
+          description: Ciudad a consultar
+      responses:
+        '200':
+          description: Array de reportes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Weather'
+        '404':
+          description: Sin registros
+          content:
+            application/json:
+              example:
+                message: "No hay registros climáticos"
+
+  /weather/{id}:
+    delete:
+      summary: Eliminar reporte meteorológico
+      description: >
+        Elimina un reporte de la BD usando su ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID de MongoDB
+      responses:
+        '200':
+          description: Eliminación exitosa
+          content:
+            application/json:
+              example:
+                message: "Registro con id 64e2b5f0a6c8d3b2e1234567 eliminado correctamente"
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              example:
+                message: "Not found"
+ # -----------------------
+  # Módulo Sismos
+  # -----------------------
   /earthquakes/{source}:
     get:
       summary: Obtener los 10 sismos más recientes de una fuente
@@ -181,6 +312,35 @@ paths:
                 error: "No existe un sismo con ese ID"
 components:
   schemas:
+    Weather:
+      type: object
+      properties:
+        id:
+          type: string
+        city:
+          type: string
+        temperature:
+          type: number
+        humidity:
+          type: number
+        condition:
+          type: string
+          enum: [Soleado, Nublado, Lluvioso, Tormenta]
+      required: [id, city, temperature, humidity, condition]
+
+    WeatherInput:
+      type: object
+      properties:
+        city:
+          type: string
+        temperature:
+          type: number
+        humidity:
+          type: number
+        condition:
+          type: string
+          enum: [Soleado, Nublado, Lluvioso, Tormenta]
+      required: [city, temperature, humidity, condition]
     EarthquakeManualInput:
       type: object
       required:
